@@ -50,6 +50,8 @@ formset
     //
     label LABEL_RES_NEXT;
 
+    label LABEL_SSDT_LOAD;
+
     text
       help  = STRING_TOKEN(STR_SAVE_EXIT),
       text  = STRING_TOKEN(STR_SAVE_EXIT),

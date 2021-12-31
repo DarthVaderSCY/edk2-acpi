@@ -25,6 +25,7 @@ typedef struct {
   //
   UINT32 HorizontalResolution;
   UINT32 VerticalResolution;
+  UINT32 SSDTOption;
 } PLATFORM_CONFIG;
 #pragma pack()
 

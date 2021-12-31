@@ -31,7 +31,7 @@
   #
   DEFINE SECURE_BOOT_ENABLE      = FALSE
   DEFINE SMM_REQUIRE             = FALSE
-  DEFINE SOURCE_DEBUG_ENABLE     = FALSE
+  DEFINE SOURCE_DEBUG_ENABLE     = TRUE
   DEFINE TPM_ENABLE              = FALSE
   DEFINE TPM_CONFIG_ENABLE       = FALSE
 
@@ -137,6 +137,7 @@
   BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
+  CpuCacheInfoLib|UefiCpuPkg/Library/CpuCacheInfoLib/DxeCpuCacheInfoLib.inf
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
@@ -487,6 +488,7 @@
 !endif
 
 [PcdsFixedAtBuild]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHelloWorldPrintTimes|3
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
 !if $(SMM_REQUIRE) == FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
@@ -541,6 +543,7 @@
   #                             // significantly impact boot performance
   # DEBUG_ERROR     0x80000000  // Error
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8000004F
+  #gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
 
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x17
@@ -674,7 +677,18 @@
 #
 ################################################################################
 [Components]
+  #MdeModulePkg/Application/HelloWorld/HelloWorld.inf
+  #SampleApp/SampleApp.inf
+  #MyShellApp/MyShellApp.inf
+  #MyCacheApp/MyCacheApp.inf
   OvmfPkg/ResetVector/ResetVector.inf
+  SSDT/acpiTables.inf
+
+
+#SampleApp/SampleApp.inf {
+  # <LibraryClasses>
+  #  DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+ #}
 
   #
   # SEC Phase modules
@@ -682,6 +696,20 @@
   OvmfPkg/Sec/SecMain.inf {
     <LibraryClasses>
       NULL|MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
+  }
+
+MyWizardDriver/MyWizardDriver.inf{
+      <LibraryClasses>    DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
+}
+
+SSDT/acpiApp.inf{
+  <LibraryClasses>
+ AcpiLib|EmbeddedPkg/Library/AcpiLib/AcpiLib.inf
+}
+
+OvmfPkg/PlatformDxe/Platform.inf{
+    <LibraryClasses>
+    AcpiLib|EmbeddedPkg/Library/AcpiLib/AcpiLib.inf
   }
 
   #
@@ -882,6 +910,7 @@
   MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
   MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
   MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
+  SSDT/acpiTables.inf
 
   #
   # Network Support
@@ -944,6 +973,7 @@
       NULL|ShellPkg/Library/UefiShellDebug1CommandsLib/UefiShellDebug1CommandsLib.inf
       NULL|ShellPkg/Library/UefiShellInstall1CommandsLib/UefiShellInstall1CommandsLib.inf
       NULL|ShellPkg/Library/UefiShellNetwork1CommandsLib/UefiShellNetwork1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellAcpiViewCommandLib/UefiShellAcpiViewCommandLib.inf  
 !if $(NETWORK_IP6_ENABLE) == TRUE
       NULL|ShellPkg/Library/UefiShellNetwork2CommandsLib/UefiShellNetwork2CommandsLib.inf
 !endif
@@ -962,7 +992,10 @@
   OvmfPkg/EnrollDefaultKeys/EnrollDefaultKeys.inf
 !endif
 
-  OvmfPkg/PlatformDxe/Platform.inf
+  OvmfPkg/PlatformDxe/Platform.inf{
+    <LibraryClasses>
+    AcpiLib|EmbeddedPkg/Library/AcpiLib/AcpiLib.inf
+  }
   OvmfPkg/AmdSevDxe/AmdSevDxe.inf
   OvmfPkg/IoMmuDxe/IoMmuDxe.inf
 

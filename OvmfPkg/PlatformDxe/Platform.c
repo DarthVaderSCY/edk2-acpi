@@ -8,6 +8,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
+#include <Library/AcpiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -70,6 +71,8 @@ STATIC PKG_DEVICE_PATH mPkgDevicePath = {
     }
   }
 };
+
+STATIC CONST EFI_GUID acpiTableFile = { 0x3b45f660, 0x2fa5, 0x4912, { 0xa4, 0x83, 0x0f, 0x25, 0x3e, 0x40, 0x76, 0x92 } };
 
 //
 // The configuration interface between the HII engine (form display etc) and
@@ -171,7 +174,7 @@ PlatformConfigToFormState (
           break;
         }
       }
-
+      MainFormState->SSDTOption = PlatformConfig.SSDTOption;
       break;
     }
     //
@@ -284,6 +287,7 @@ FormStateToPlatformConfig (
   ZeroMem (&PlatformConfig, sizeof PlatformConfig);
   PlatformConfig.HorizontalResolution = GopMode->X;
   PlatformConfig.VerticalResolution   = GopMode->Y;
+  PlatformConfig.SSDTOption = MainFormState->SSDTOption;
 
   Status = PlatformConfigSave (&PlatformConfig);
   return Status;
@@ -640,6 +644,115 @@ FreeOpCodeBuffer:
   return Status;
 }
 
+STATIC
+EFI_STATUS
+EFIAPI
+PopulateForm2 (
+  IN  EFI_HII_HANDLE  PackageList,
+  IN  EFI_GUID        *FormSetGuid,
+  IN  EFI_FORM_ID     FormId
+  )
+{
+  EFI_STATUS         Status;
+  VOID               *OpCodeBuffer;
+  VOID               *OpCode;
+  EFI_IFR_GUID_LABEL *Anchor;
+  VOID               *OpCodeBuffer2;
+  CHAR16              Desc[MAXSIZE_RES_CUR];
+  EFI_STRING_ID       NewString;
+
+  OpCodeBuffer2 = NULL;
+
+  //
+  // 1. Allocate an empty opcode buffer.
+  //
+  OpCodeBuffer = HiiAllocateOpCodeHandle ();
+  if (OpCodeBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // 2. Create a label opcode (which is a Tiano extension) inside the buffer.
+  // The label's number must match the "anchor" label in the form.
+  //
+  OpCode = HiiCreateGuidOpCode (OpCodeBuffer, &gEfiIfrTianoGuid,
+             NULL /* optional copy origin */, sizeof *Anchor);
+  if (OpCode == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto FreeOpCodeBuffer;
+  }
+  Anchor               = OpCode;
+  Anchor->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  Anchor->Number       = LABEL_SSDT_LOAD;
+
+  //
+  // 3. Create the opcodes inside the buffer that are to be inserted into the
+  // form.
+  //
+  // 3.1. Get a list of resolutions.
+  //
+  OpCodeBuffer2 = HiiAllocateOpCodeHandle ();
+
+  UnicodeSPrintAsciiFormat (Desc, sizeof Desc, "No");
+  NewString = HiiSetString (PackageList, 0 /* new string */, Desc,
+                  NULL /* for all languages */);
+  OpCode = HiiCreateOneOfOptionOpCode (OpCodeBuffer2, NewString,
+               0 /* Flags */, EFI_IFR_NUMERIC_SIZE_4, 0);
+
+  
+  UnicodeSPrintAsciiFormat (Desc, sizeof Desc, "Yes");
+  NewString = HiiSetString (PackageList, 0 /* new string */, Desc,
+                  NULL /* for all languages */);
+  OpCode = HiiCreateOneOfOptionOpCode (OpCodeBuffer2, NewString,
+               0 /* Flags */, EFI_IFR_NUMERIC_SIZE_4, 1);
+
+  if (EFI_ERROR (Status)) {
+    goto FreeOpCodeBuffer2;
+  }
+
+  //
+  // 3.2. Create a one-of-many question with the above options.
+  //
+  OpCode = HiiCreateOneOfOpCode (
+             OpCodeBuffer,                        // create opcode inside this
+                                                  //   opcode buffer,
+             QUESTION_SSDT_LOAD,                   // ID of question,
+             FORMSTATEID_MAIN_FORM,               // identifies form state
+                                                  //   storage,
+             (UINT16) OFFSET_OF (MAIN_FORM_STATE, // value of question stored
+                        SSDTOption), //   at this offset,
+             STRING_TOKEN (STR_SSDT_LOAD),         // Prompt,
+             STRING_TOKEN (STR_SSDT_LOAD_HELP),    // Help,
+             0,                                   // QuestionFlags,
+             EFI_IFR_NUMERIC_SIZE_4,              // see sizeof
+                                                  //   NextPreferredResolution,
+             OpCodeBuffer2,                       // buffer with possible
+                                                  //   choices,
+             NULL                                 // DEFAULT opcodes
+             );
+  if (OpCode == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto FreeOpCodeBuffer2;
+  }
+
+  //
+  // 4. Update the form with the opcode buffer.
+  //
+  Status = HiiUpdateForm (PackageList, FormSetGuid, FormId,
+             OpCodeBuffer, // buffer with head anchor, and new contents to be
+                           // inserted at it
+             NULL          // buffer with tail anchor, for deleting old
+                           // contents up to it
+             );
+
+FreeOpCodeBuffer2:
+  HiiFreeOpCodeHandle (OpCodeBuffer2);
+
+FreeOpCodeBuffer:
+  HiiFreeOpCodeHandle (OpCodeBuffer);
+
+  return Status;
+}
 
 /**
   Load and execute the platform configuration.
@@ -659,12 +772,18 @@ ExecutePlatformConfig (
   UINT64          OptionalElements;
   RETURN_STATUS   PcdStatus;
 
-  Status = PlatformConfigLoad (&PlatformConfig, &OptionalElements);
+  Status = PlatformConfigLoad (&PlatformConfig, &OptionalElements); 
   if (EFI_ERROR (Status)) {
     DEBUG (((Status == EFI_NOT_FOUND) ? DEBUG_VERBOSE : DEBUG_ERROR,
       "%a: failed to load platform config: %r\n", __FUNCTION__, Status));
     return Status;
   }
+
+  //Execute SSDT Loading
+  if (PlatformConfig.SSDTOption > 0){
+    LocateAndInstallAcpiFromFv (&acpiTableFile);
+  }
+
 
   if (OptionalElements & PLATFORM_CONFIG_F_GRAPHICS_RESOLUTION) {
     //
@@ -728,6 +847,8 @@ GopInstalled (
       FreePool (mGopModes);
       continue;
     }
+
+    PopulateForm2 (mInstalledPackages, &gOvmfPlatformConfigGuid, FORMID_MAIN_FORM);
 
     break;
   }

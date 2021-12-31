@@ -28,4 +28,5 @@
 #string STR_RES_NEXT_HELP        #language en-US "You can specify a new preference for the Graphics Console here. The list is filtered against the video RAM size."
 #string STR_SAVE_EXIT            #language en-US "Commit Changes and Exit"
 #string STR_DISCARD_EXIT         #language en-US "Discard Changes and Exit"
-
+#string STR_SSDT_LOAD            #language en-US "Choose Whether to Load SSDT"
+#string STR_SSDT_LOAD_HELP       #language en-US "Hello, motherfucker"

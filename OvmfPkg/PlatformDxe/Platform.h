@@ -25,6 +25,9 @@
 #define QUESTION_SAVE_EXIT     3
 #define QUESTION_DISCARD_EXIT  4
 
+#define LABEL_SSDT_LOAD        5
+#define QUESTION_SSDT_LOAD     6
+
 //
 // This structure describes the form state. Its fields relate strictly to the
 // visual widgets on the form.
@@ -32,6 +35,7 @@
 typedef struct {
   UINT16 CurrentPreferredResolution[MAXSIZE_RES_CUR];
   UINT32 NextPreferredResolution;
+  UINT32 SSDTOption;
 } MAIN_FORM_STATE;
 
 #endif // _PLATFORM_H_
