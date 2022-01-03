@@ -70,50 +70,17 @@ DefinitionBlock(
         0x3000
         )
 {
-        Name (BUF0, Buffer(4) {0x48,0x02,0x03,0x04}) // Length = 4
-        Method (HIOS, NotSerialized)
+        Method (ADD2, 2)
         {
-            If(_OSI ("Linux"))
-            {
-                Return ("Linux")    
-            }
-            If(_OSI ("Windows 2015"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2016"))
-            {
-                Return ("Win10")    
-            }    
-            If(_OSI ("Windows 2017"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2017.2"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2018"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2018.2"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2019"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2020"))
-            {
-                Return ("Win10")    
-            }
-            If(_OSI ("Windows 2021"))
-            {
-                Return ("Win11")    
-            }
-            Return ("Unknown OS")
+            Name (Local0, 0)
+            Name (Local1, 0)
+            
+            Store (Arg0, Local0)
+            Store (Arg1, Local1)
+            
+            Local1 += Local0
+
+            Return (Local1)
         }
 } // End of Definition Block
 
