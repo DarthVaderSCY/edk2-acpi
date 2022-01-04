@@ -71,7 +71,7 @@ DefinitionBlock(
         )
 {
         Name (BUF0, Buffer(4) {0x48,0x02,0x03,0x04}) // Length = 4
-        Method (HIOS, NotSerialized)
+        Method (HIOS)
         {
             If(_OSI ("Linux"))
             {

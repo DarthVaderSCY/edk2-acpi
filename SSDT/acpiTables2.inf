@@ -1,0 +1,32 @@
+
+## @file
+#  Component description file for PlatformAcpiTables module.
+#
+#  ACPI table data and ASL sources required to boot the platform.
+#
+#  Copyright (c) 2020, Rebecca Cran <rebecca@bsdio.com>
+#  Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014, Pluribus Networks, Inc.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.29
+  BASE_NAME                      = AcpiTables2
+  FILE_GUID                      = 58ef7ae8-18a8-4079-a60c-8ab4b0cbb325
+  MODULE_TYPE                    = USER_DEFINED
+  VERSION_STRING                 = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  ssdt2.asl
+
+[Packages]
+  MdePkg/MdePkg.dec

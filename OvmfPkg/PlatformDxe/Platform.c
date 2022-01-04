@@ -73,6 +73,7 @@ STATIC PKG_DEVICE_PATH mPkgDevicePath = {
 };
 
 STATIC CONST EFI_GUID acpiTableFile = { 0x3b45f660, 0x2fa5, 0x4912, { 0xa4, 0x83, 0x0f, 0x25, 0x3e, 0x40, 0x76, 0x92 } };
+STATIC CONST EFI_GUID acpiTableFile2 = { 0x58ef7ae8, 0x18a8, 0x4079, { 0xa6, 0x0c, 0x8a, 0xb4, 0xb0, 0xcb, 0xb3, 0x25 } };
 
 //
 // The configuration interface between the HII engine (form display etc) and
@@ -700,11 +701,17 @@ PopulateForm2 (
                0 /* Flags */, EFI_IFR_NUMERIC_SIZE_4, 0);
 
   
-  UnicodeSPrintAsciiFormat (Desc, sizeof Desc, "Yes");
+  UnicodeSPrintAsciiFormat (Desc, sizeof Desc, "Load SSDT1");
   NewString = HiiSetString (PackageList, 0 /* new string */, Desc,
                   NULL /* for all languages */);
   OpCode = HiiCreateOneOfOptionOpCode (OpCodeBuffer2, NewString,
                0 /* Flags */, EFI_IFR_NUMERIC_SIZE_4, 1);
+
+  UnicodeSPrintAsciiFormat (Desc, sizeof Desc, "Load SSDT2");
+  NewString = HiiSetString (PackageList, 0 /* new string */, Desc,
+                  NULL /* for all languages */);
+  OpCode = HiiCreateOneOfOptionOpCode (OpCodeBuffer2, NewString,
+               0 /* Flags */, EFI_IFR_NUMERIC_SIZE_4, 2);
 
   if (EFI_ERROR (Status)) {
     goto FreeOpCodeBuffer2;
@@ -781,7 +788,18 @@ ExecutePlatformConfig (
 
   //Execute SSDT Loading
   if (PlatformConfig.SSDTOption > 0){
-    LocateAndInstallAcpiFromFv (&acpiTableFile);
+    switch (PlatformConfig.SSDTOption)
+    {
+    case 1:
+      LocateAndInstallAcpiFromFv (&acpiTableFile);
+      break;
+    case 2:
+      LocateAndInstallAcpiFromFv (&acpiTableFile2);
+      break;
+    default:
+      break;
+    }
+    
   }
 
 

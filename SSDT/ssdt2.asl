@@ -72,15 +72,15 @@ DefinitionBlock(
 {
         Method (ADD2, 2)
         {
-            Name (Local0, 0)
-            Name (Local1, 0)
+            Name (LOC0, 0)
+            Name (LOC1, 0)
             
-            Store (Arg0, Local0)
-            Store (Arg1, Local1)
+            Store (Arg0, LOC0)
+            Store (Arg1, LOC1)
             
-            Local1 += Local0
+            LOC1 += LOC0
 
-            Return (Local1)
+            Return (LOC1)
         }
 } // End of Definition Block
 

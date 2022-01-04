@@ -911,6 +911,7 @@ OvmfPkg/PlatformDxe/Platform.inf{
   MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
   MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
   SSDT/acpiTables.inf
+  SSDT/acpiTables2.inf
 
   #
   # Network Support
